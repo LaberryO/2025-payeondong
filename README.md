@@ -1,6 +1,13 @@
 2025년 파이썬 연구 동아리 - 게임 개발 프로젝트
 =
 
+## 🛠️ㆍ개발 환경
+- Python
+    - pygame
+
+- Visual Studio Code (IDE)
+- Piskel (오브젝트 디자인)
+
 ## 🎲ㆍ장르
 - 2D 횡스크롤 로그라이크
     - Skull: The Hero Slayer
@@ -9,7 +16,6 @@
 
 ## 🖼️ㆍ그래픽
 - 도트 게임
-    - Piskel 사용
 
 ## 📖ㆍ스토리
 - 자체 제작 (예정)
