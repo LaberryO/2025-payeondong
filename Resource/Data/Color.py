@@ -28,3 +28,5 @@ class Color:
     def customGreen(self):
         return (168, 255, 108);
         
+    def customBlue(self):
+        return (50, 50, 255);
