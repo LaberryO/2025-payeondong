@@ -1,94 +1,61 @@
 import pygame
-import os
-import pymunk
-import pymunk.pygame_util
-
 from Resource import *
 
-class Game:
-    def __init__(self):
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        pygame.display.set_caption("2025-payeondong")
+pygame.init()
+screen = pygame.display.set_mode((1600, 800))
+pygame.display.set_caption("플랫포머 with 카메라 스크롤")
+clock = pygame.time.Clock()
 
-        self.clock = pygame.time.Clock()
-        self.screen = Screen(1600, 900) # 1600 : 900 이 기본값
-        self.display = pygame.display.set_mode(self.screen.size)
+all_sprites = pygame.sprite.Group()
+projectiles = pygame.sprite.Group()
+platforms = pygame.sprite.Group()
 
-        self.running = True
+# 타일맵 로드
+tilemap_data = load_tilemap("tilemap.txt")
 
-        # 충돌 타입
-        self.PLAYER = 1
-        self.GROUND = 2
+map_width = len(tilemap_data[0]) * TILE_SIZE
+map_height = len(tilemap_data) * TILE_SIZE
 
-        # Space
-        self.space = pymunk.Space()
-        self.space.gravity = (0, 1300)
-        self.draw_options = pymunk.pygame_util.DrawOptions(self.display)
+for row_index, row in enumerate(tilemap_data):
+    for col_index, tile in enumerate(row):
+        if tile == 1:
+            x = col_index * TILE_SIZE
+            y = row_index * TILE_SIZE
+            platform = Platform(x, y)
+            platforms.add(platform)
+            all_sprites.add(platform)
 
-        self.floor = pymunk.Body(body_type=pymunk.Body.STATIC)
-        self.floor.position = (0, self.screen.height - 64)
-        self.floor_shape = pymunk.Segment(self.floor, (0, 0), (self.screen.width, 0), 1)
-        self.floor_shape.collision_type = 2 # GROUND
+player = Player(100, 100, projectiles, platforms)
+all_sprites.add(player)
 
-        self.space.add(self.floor, self.floor_shape)
-    
-    def handleEvents(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+camera = Camera(map_width, map_height)
 
-        self.keys = pygame.key.get_pressed()
+running = True
+while running:
+    clock.tick(60)
+    screen.fill((30, 30, 30))
 
-    def handleStates(self):
-        state_method = {
-            "game" : self.game,
-        }
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            player.shoot(event.pos)
 
-        def default():
-            print("Unknown State")
+    keys = pygame.key.get_pressed()
+    player.update(keys)
 
-        state_method.get(self.state, default)()
+    projectiles.update()
+    camera.update(player)
 
-    # 메인 루프
-    def game(self):
-        self.handleEvents()
+    # 화면에 스프라이트 그리기 (카메라 좌표 적용)
+    for sprite in all_sprites:
+        cam_pos = camera.apply(sprite)
+        print(f"Sprite {sprite} original: {sprite.rect.topleft}, after camera: {cam_pos}")
+        screen.blit(sprite.image, cam_pos)
 
-        self.display.fill((255, 255, 255))
+    for projectile in projectiles:
+        screen.blit(projectile.image, camera.apply(projectile))
 
-        self.player.move(self.keys)
+    pygame.display.flip()
 
-        self.space.debug_draw(self.draw_options)
-
-        self.space.step(self.delta_time)
-
-    # 엔진 구동
-    def run(self):
-        self.load()
-
-        self.state = "game" # 임시 값
-        while self.running:
-            self.delta_time = self.clock.tick(60) / 1000.0
-
-            self.handleStates()
-
-            pygame.display.update()
-
-    # 로딩
-    def load(self):
-        self.reset()
-
-    # 리셋
-    def reset(self):
-        self.player = Player(self.screen, self.space)
-        handler = self.space.on_collision(collision_type_a=self.PLAYER, collision_type_b=self.GROUND, begin=self.onGroundContact, data=self.player)
-
-    # 지면 접촉 여부
-    def onGroundContact(self, arbiter, space, data):
-        self.player.allowJump()
-        return True
-        
-if __name__ == "__main__":
-    pygame.init()
-    game = Game()
-    game.run()
-    pygame.quit()
+pygame.quit()
